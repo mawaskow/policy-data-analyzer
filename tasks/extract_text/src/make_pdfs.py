@@ -12,7 +12,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from pikepdf import Pdf
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader
 
 
 def text_cleaning(text):
@@ -38,12 +38,12 @@ def file_recovery(filename, zipfile):
         zipfile (ZipFile): ZipFile instance where file is located
 
     Returns:
-        PdfFileReader: new PdfFileReader instance from where text will be read
+        PdfReader: new PdfReader instance from where text will be read
     """
     with Pdf.open(BytesIO(zipfile.read(filename))) as pdf_file:  # attempting to recovery file
         path_to_file = os.path.join(OUTPUT_PATH, os.path.basename(filename))
         pdf_file.save(path_to_file)  # writes the file to disk
-        pdfReader = PdfFileReader(path_to_file)  # attempts to read the file again
+        pdfReader = PdfReader(path_to_file)  # attempts to read the file again
         os.remove(path_to_file)
     return pdfReader
 
@@ -66,27 +66,31 @@ def main():
         for file in filenames:
             logger.info(f"Processing {file}...")
             try:
-                pdfReader = PdfFileReader(BytesIO(myzip.read(file)))  # read file
+                pdfReader = PdfReader(BytesIO(myzip.read(file)))  # read file
+                # doc_dict holds the attributes of each pdf file
+                doc_dict = {i[1:]: str(j) for i, j in pdfReader.metadata.items()}
+                doc_dict["Country"], doc_dict["Text"] = file.split("/")[0], ""
+                for page in range(len(pdfReader.pages)):
+                    try:
+                        page_text = pdfReader.pages[page].extract_text()  # extracting pdf text
+                    except TypeError as e:
+                        logger.warning(e)
+                        logger.info(f"Skipping {file}...")
+                        continue
+                    page_text = text_cleaning(page_text)  # clean pdf text
+                    doc_dict["Text"] += page_text  # concatenate pages' text
+                pdf_dict[os.path.splitext(os.path.basename(file))[0]] = doc_dict
             except Exception as e:  # In case the file is corrupted
                 logger.warning(e)
                 logger.info(f"Attempting to recover {file}...")
                 pdfReader = file_recovery(file, myzip)  # attempting to recover file
-            # doc_dict holds the attributes of each pdf file
-            doc_dict = {i[1:]: str(j) for i, j in pdfReader.getDocumentInfo().items()}
-            doc_dict["Country"], doc_dict["Text"] = file.split("/")[0], ""
-            for page in range(pdfReader.numPages):
-                try:
-                    page_text = pdfReader.getPage(page).extractText()  # extracting pdf text
-                except TypeError as e:
-                    logger.warning(e)
-                    logger.info(f"Skipping {file}...")
-                    continue
-                page_text = text_cleaning(page_text)  # clean pdf text
-                doc_dict["Text"] += page_text  # concatenate pages' text
-            pdf_dict[os.path.splitext(os.path.basename(file))[0]] = doc_dict
 
-    with open(os.path.join(OUTPUT_PATH, 'pdf_files.json'), 'w') as outfile:
-        json.dump(pdf_dict, outfile, ensure_ascii=False, indent=4)
+    with open(os.path.join(OUTPUT_PATH, 'pdf_files.json'), 'w', encoding="utf-8") as outfile:
+        try:
+            json.dump(pdf_dict, outfile, ensure_ascii=False, indent=4)
+        except UnicodeEncodeError as e:
+            logger.warning(e)
+            logger.info(f"Skipping...")
 
 
 if __name__ == '__main__':
