@@ -12,10 +12,8 @@ import glob
 def extract_comments_from_pdf(file_path):
     """
     This function extracts comments from a PDF file and returns them as a list.
-    
     Parameters:
     file_path (str): The path to the PDF file
-    
     Returns:
     list: A list of comments extracted from the PDF file
     """
@@ -24,32 +22,27 @@ def extract_comments_from_pdf(file_path):
         with open(file_path, 'rb') as pdf_file:
             # Create a PDF reader object
             pdf_reader = PyPDF2.PdfReader(pdf_file)
-            
             # Get the number of pages in the PDF file
             num_pages = len(pdf_reader.pages)
-            
             # Initialize an empty list to store comments
             comments = []
-            
             # Loop through each page in the PDF file
             for page_num in range(num_pages):
-                #print(page_num)
                 # Get the page object
                 page = pdf_reader.pages[page_num]
-                
                 # Get the annotations for the page
                 if "/Annots" in page:
                     for annot in page["/Annots"]:
-                        obj = annot.get_object()
-                        print("object", obj.keys())
-                        print(type(obj))
-                        #annotation = {"subtype": obj["/Subtype"], "location": obj["/Rect"]}
-                        print(obj["/Subtype"], obj["/Rect"])
-                        subtype = annot.get_object()["/Subtype"]
-                        if subtype == "/Popup":
+                        try:
                             comment = annot.get_object()["/Contents"]
                             comments.append(comment)
-                            print(comment)
+                        except:
+                            pass
+                        subtype = annot.get_object()["/Subtype"]
+                        if subtype == "/Highlight":
+                            coords = annot.get_object()["/QuadPoints"]
+                            #x1, y1, x2, y2, x3, y3, x4, y4 = coords
+                            print(coords)
             # Return the list of comments
             return comments
     except Exception as e:
