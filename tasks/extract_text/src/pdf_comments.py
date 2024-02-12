@@ -1,5 +1,3 @@
-# from https://codepal.ai/code-generator/query/DvWPZwM9/python-pdf-comments-extraction
-
 import PyPDF2
 import os
 from os import listdir, walk
@@ -26,6 +24,7 @@ def extract_comments_from_pdf(file_path):
             num_pages = len(pdf_reader.pages)
             # Initialize an empty list to store comments
             comments = []
+            coords = []
             # Loop through each page in the PDF file
             for page_num in range(num_pages):
                 # Get the page object
@@ -40,9 +39,9 @@ def extract_comments_from_pdf(file_path):
                             pass
                         subtype = annot.get_object()["/Subtype"]
                         if subtype == "/Highlight":
-                            coords = annot.get_object()["/QuadPoints"]
+                            cos = annot.get_object()["/QuadPoints"]
                             #x1, y1, x2, y2, x3, y3, x4, y4 = coords
-                            print(coords)
+                            coords.append(cos)
             # Return the list of comments
             return comments
     except Exception as e:
@@ -63,25 +62,4 @@ except Exception as e:  # In case the file is corrupted
     print(e)
     print(f"Attempting to recover experiment...")
     #pdfReader = file_recovery(file, myzip)  # attempting to recover file
-
 print(cmts)
-'''
-INPUT_PATH = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\"
-
-#filenames = [f for f in listdir(INPUT_PATH) if isfile(join(INPUT_PATH, f))]
-filenames = []
-
-dir_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\**\\*.*"
-for file in glob.glob(dir_path, recursive=True):
-    filenames.append(file)
-
-pdf_dict = defaultdict(dict)
-for file in filenames:
-    print(f"Processing {file}...")
-    try:
-        cmts = extract_comments_from_pdf(os.path.join(INPUT_PATH, file))
-    except Exception as e:  # In case the file is corrupted
-        print(e)
-        print(f"Attempting to recover {file}...")
-        #pdfReader = file_recovery(file, myzip)  # attempting to recover file
-'''
