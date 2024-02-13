@@ -100,10 +100,23 @@ except Exception as e:  # In case the file is corrupted
 print(cmts.keys(), cmts)
 print(hlts.keys(), hlts)
 '''
+#pc
+#INPUT_PATH = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\"
+# work laptop
+INPUT_PATH = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\"
 
-INPUT_PATH = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\"
+#pc
+#dir_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\**\\*.*"
+# work laptop
+dir_path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\**\\*.*"
+
+#output
+#pc
+#path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\"
+# work laptop
+path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\"
+
 filenames = []
-dir_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\**\\*.*"
 pdf_dct = {}
 for file in glob.glob(dir_path, recursive=True):
     filenames.append(file)
@@ -132,7 +145,6 @@ for file in filenames:
 
 print("writing to json")
 
-path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\"
 name = "pdfextract"
 fname = name + ".json"
 file = path + fname

@@ -55,7 +55,10 @@ def check_dictionary_values(dictionary):
     print(check_country)
 
 def get_distance( model, sentence_emb, sentences_dict, query, similarity_treshold):
-    query_embedding = model.encode(query.lower(), show_progress_bar=False, device='cuda')
+    #pc has cuda
+    #query_embedding = model.encode(query.lower(), show_progress_bar=False, device='cuda')
+    # work laptop does not
+    query_embedding = model.encode(query.lower(), show_progress_bar=False)
     highlights = []
     for sentence in sentences_dict.keys():
         try:
@@ -92,7 +95,10 @@ def add_rank(results_dictionary):
 
 # For experiments 2 and 3 this function is to save results in separate csv files
 def save_results_as_separate_csv(results_dictionary, queries_dictionary, date):
-    path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+    #pc
+    #path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+    # work laptop
+    path = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
 #     for model, value in results_dictionary.items():
     for exp_title, result in results_dictionary.items():#value.items():
         filename = queries_dictionary[exp_title]
@@ -107,7 +113,10 @@ def save_results_as_separate_csv(results_dictionary, queries_dictionary, date):
 policy_dict = {}
 objs = []
 language = "spanish"
-os.chdir("C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/")
+#pc
+#os.chdir("C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/")
+# work laptop
+os.chdir("C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/")
 #C:\Users\allie\Documents\GitHub\policy-data-analyzer\tasks\text_preprocessing\output\new
 mypath = "./text_preprocessing/output/new/"
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
@@ -149,15 +158,20 @@ today = today.strftime('%Y-%m-%d')
 filename = "Embeddings_" + today + "_ES.json"
 file = path + filename
 
-model = SentenceTransformer(transformer_name, device="cuda")
-embs = create_sentence_embeddings(model, sample_sentences, file)
-#embs = create_sentence_embeddings(model, sentences, file)
+#pc has cuda
+#model = SentenceTransformer(transformer_name, device="cuda")
+#work laptop does not
+model = SentenceTransformer(transformer_name)
+#sample
+#embs = create_sentence_embeddings(model, sample_sentences, file)
+#all
+embs = create_sentence_embeddings(model, sentences, file)
 
 Tf = time.perf_counter()
 
 print(f"The building of a sentence embedding database in the two(?) current models has taken {Tf - Ti:0.4f} seconds")
 
-with open(file, 'a') as fp:
+with open(file, 'w+') as fp:
     json.dump(embs, fp, cls = NumpyArrayEncoder)
 
 queries_dict = {
@@ -203,8 +217,10 @@ today = today.strftime('%Y-%m-%d')
 name = "Pre_tagged_" + today
 
 model = SentenceTransformer(transformer_name)
-results_dict = sentence_similarity_search(model, queries, embs, sample_sentences, similarity_threshold, search_results_limit, name)
-#results_dict = sentence_similarity_search(model, queries, embs, sentences, similarity_threshold, search_results_limit, name)
+#sample
+#results_dict = sentence_similarity_search(model, queries, embs, sample_sentences, similarity_threshold, search_results_limit, name)
+#all
+results_dict = sentence_similarity_search(model, queries, embs, sentences, similarity_threshold, search_results_limit, name)
 
 path = "./data_augmentation/output/sample/"
 fname = name + ".json"
@@ -212,7 +228,10 @@ file = path + fname
 with open(file, 'w+') as fp:
     json.dump(results_dict, fp, indent=4)
 
-path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+#pc
+#path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+# work laptop
+path = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
 file = path + name +".json"
 with open(file, "r") as f:
     results_ = json.load(f)
