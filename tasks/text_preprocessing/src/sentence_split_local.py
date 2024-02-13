@@ -119,51 +119,51 @@ def get_nltk_sents(txt: str, tokenizer: nltk.PunktSentenceTokenizer, extra_abbre
     return tokenizer.tokenize(txt)
 
 ###################################################
+def main():
+    language='spanish'
+    abbrevs= None
+    tokenizer = ES_TOKENIZER
+    min_num_words = 5
 
-language='spanish'
-abbrevs= None
-tokenizer = ES_TOKENIZER
-min_num_words = 5
+    with open("../extract_text/output/pdf_files.json", "r", encoding="utf-8") as f:
+        pdf_conv = json.load(f)
 
-with open("../extract_text/output/pdf_files.json", "r", encoding="utf-8") as f:
-    pdf_conv = json.load(f)
+    file_lst = []
+    for key in pdf_conv:
+        file_lst.append((key,pdf_conv[key]['Text']))
 
-file_lst = []
-for key in pdf_conv:
-    file_lst.append((key,pdf_conv[key]['Text']))
+    error_files={}
+    i = 0
+    for file_id, text in file_lst:
+        try:
+            preprocessed_text = preprocess_spanish_text(text)
+            sents = get_nltk_sents(preprocessed_text, tokenizer, abbrevs)
+            postprocessed_sents = format_sents_for_output(remove_short_sents(sents, min_num_words), file_id)
+            sents_json = {file_id: {"metadata":
+                {"n_sentences": len(postprocessed_sents),
+                "language": language},
+                "sentences": postprocessed_sents}}
+            with open(f'./output/new/{file_id}_sents.json', 'w') as f:
+                json.dump(sents_json, f)
 
-error_files={}
-i = 0
-for file_id, text in file_lst:
-    try:
-        preprocessed_text = preprocess_spanish_text(text)
-        sents = get_nltk_sents(preprocessed_text, tokenizer, abbrevs)
-        postprocessed_sents = format_sents_for_output(remove_short_sents(sents, min_num_words), file_id)
-        sents_json = {file_id: {"metadata":
-            {"n_sentences": len(postprocessed_sents),
-            "language": language},
-            "sentences": postprocessed_sents}}
-        with open(f'./output/new/{file_id}_sents.json', 'w') as f:
-            json.dump(sents_json, f)
+        except Exception as e:
+            error_files[str(file_id)]= str(e)
 
-    except Exception as e:
-        error_files[str(file_id)]= str(e)
+        i += 1
 
-    i += 1
+        if i % 10 == 0:
+            print("----------------------------------------------")
+            print(f"Processing {i} documents...")
+            print(f"Number of errors so far: {len(error_files)}")
+            print("----------------------------------------------")
 
-    if i % 10 == 0:
-        print("----------------------------------------------")
-        print(f"Processing {i} documents...")
-        print(f"Number of errors so far: {len(error_files)}")
-        print("----------------------------------------------")
+    with open("./errors.json", "w") as x:
+        json.dump(error_files, x)
 
-with open("./errors.json", "w") as x:
-    json.dump(error_files, x)
-
-print("=============================================================")
-print(f"Total documents processed: {i}")
-print(f"Total number of documents with errors: {len(error_files)}. Stored file in ./errors.json")
-print("=============================================================")
+    print("=============================================================")
+    print(f"Total documents processed: {i}")
+    print(f"Total number of documents with errors: {len(error_files)}. Stored file in ./errors.json")
+    print("=============================================================")
 
 '''
 if __name__ == '__main__':

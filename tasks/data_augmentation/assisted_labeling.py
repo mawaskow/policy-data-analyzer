@@ -6,6 +6,7 @@ import random
 import time
 import datetime
 import csv
+import sys
 
 # Model libraries
 from sentence_transformers import SentenceTransformer
@@ -242,3 +243,20 @@ len(results_)
 # Save the results as separete csv files
 
 save_results_as_separate_csv(results, queries_dict, today)
+'''
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-c', '--creds_file', required=True,
+                        help="AWS credentials JSON file")
+    parser.add_argument('-l', '--language', required=True,
+                        help="Language for sentence preprocessing/splitting. Current options are: english, spanish")
+    parser.add_argument('-n', '--min_num_words', default=5,
+                        help="Minimum number of words that a sentence needs to have to be stored")
+    parser.add_argument('-p', '--print_every', default=100,
+                        help="Print status of preprocessing every X iterations")
+
+    args = parser.parse_args()
+
+    main(args.creds_file, args.language, int(args.min_num_words), int(args.print_every))
+'''
