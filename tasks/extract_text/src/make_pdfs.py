@@ -54,7 +54,7 @@ def text_reader():
     # Useful link: https://stackoverflow.com/questions/55993860/getting-typeerror-ord-expected-string-of-length-1-but-int-found-error
     pass
 
-
+# set default values here in main()
 def main():
     logger = logging.getLogger(__name__)
     logger.info('Making pdf_files.json from base pdf files')
