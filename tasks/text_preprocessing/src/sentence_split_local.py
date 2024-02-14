@@ -27,18 +27,12 @@
 """
 from typing import Dict, List, Any, Set
 import os
-
-os.chdir("..")
-from src.utils import *
-
 import nltk
 #nltk.download('punkt')
 import json
 import argparse
 import unidecode
-
-EN_TOKENIZER = nltk.data.load("tokenizers/punkt/english.pickle")
-ES_TOKENIZER = nltk.data.load("tokenizers/punkt/spanish.pickle")
+# may need to move chdir import src.utils and Tokenizer back here
 
 def format_sents_for_output(sents: List[str], doc_id: str) -> Dict[str, Dict[str, Any]]:
     """
@@ -119,13 +113,13 @@ def get_nltk_sents(txt: str, tokenizer: nltk.PunktSentenceTokenizer, extra_abbre
     return tokenizer.tokenize(txt)
 
 ###################################################
-def main():
+def main(input_path, output_dir):
     language='spanish'
     abbrevs= None
     tokenizer = ES_TOKENIZER
     min_num_words = 5
 
-    with open("../extract_text/output/pdf_files.json", "r", encoding="utf-8") as f:
+    with open(input_path, "r", encoding="utf-8") as f:
         pdf_conv = json.load(f)
 
     file_lst = []
@@ -143,7 +137,7 @@ def main():
                 {"n_sentences": len(postprocessed_sents),
                 "language": language},
                 "sentences": postprocessed_sents}}
-            with open(f'./output/new/{file_id}_sents.json', 'w') as f:
+            with open(os.path.join(output_dir, f'{file_id}_sents.json'), 'w') as f:
                 json.dump(sents_json, f)
 
         except Exception as e:
@@ -157,7 +151,7 @@ def main():
             print(f"Number of errors so far: {len(error_files)}")
             print("----------------------------------------------")
 
-    with open("./errors.json", "w") as x:
+    with open((os.path.join(output_dir,"errors.json")), "w") as x:
         json.dump(error_files, x)
 
     print("=============================================================")
@@ -165,20 +159,33 @@ def main():
     print(f"Total number of documents with errors: {len(error_files)}. Stored file in ./errors.json")
     print("=============================================================")
 
-'''
+
 if __name__ == '__main__':
+    #TXT_PREP_DIR = ".."
+    TXT_PREP_DIR = "C:\\Users\\Ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\text_preprocessing\\src"
+    os.chdir(TXT_PREP_DIR)
+    from utils import *
+
+    #EN_TOKENIZER = nltk.data.load("tokenizers/punkt/english.pickle")
+    ES_TOKENIZER = nltk.data.load("tokenizers/punkt/spanish.pickle")
+
+    '''
+    input_path = "C:\\Users\\Ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\new\\pdf_files.json"
+    output_dir = "C:\\Users\\Ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\text_preprocessing\\output"
+
+    main(input_path, output_dir)
+    '''
+    # cmd args
+    # python ./src/sentence_split_local.py -i "C:\\Users\\Ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\new\\pdf_files.json" -o "C:\\Users\\Ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\text_preprocessing\\output"
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-c', '--creds_file', required=True,
-                        help="AWS credentials JSON file")
-    parser.add_argument('-l', '--language', required=True,
-                        help="Language for sentence preprocessing/splitting. Current options are: english, spanish")
-    parser.add_argument('-n', '--min_num_words', default=5,
-                        help="Minimum number of words that a sentence needs to have to be stored")
-    parser.add_argument('-p', '--print_every', default=100,
-                        help="Print status of preprocessing every X iterations")
+    parser.add_argument('-i', '--input_path', required=True,
+                        help="Path to input file (pdf_files.json)")
+    parser.add_argument('-o', '--output_dir', required=True,
+                        help="Path to output folder where results will be stored.")
 
     args = parser.parse_args()
 
-    main(args.creds_file, args.language, int(args.min_num_words), int(args.print_every))
-'''
+    main(args.input_path, args.output_dir)
+    
