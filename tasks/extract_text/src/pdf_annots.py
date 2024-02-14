@@ -4,6 +4,7 @@ import glob
 import fitz
 import json
 import time
+import argparse
     
 def text_cleaning(text):
     """Cleans a piece of text by removing escaped characters. (from src make_pfs)
@@ -85,88 +86,60 @@ def pdf_highlight_to_dct(file_path):
             highlt_dct[page_num] = text_cleaning(" ".join(highlight_text))
     return highlt_dct
 
-'''
-experiment = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\Chile\\2019CVE 1713470_Chile.pdf"
-cmts = []
-print(f"Processing {experiment}...")
-try:
-    #cmts = pdf_comments_to_lst(experiment)
-    cmts = pdf_comments_to_sim_dct(experiment)
-    hlts = pdf_highlight_to_dct(experiment)
-except Exception as e:  # In case the file is corrupted
-    print(e)
-    print(f"Attempting to recover experiment...")
-    #pdfReader = file_recovery(file, myzip)  # attempting to recover file
-print(cmts.keys(), cmts)
-print(hlts.keys(), hlts)
-'''
-#pc
-#INPUT_PATH = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\"
-# work laptop
-INPUT_PATH = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\"
+def main(input_path, output_path):
+    dir_path = input_path+"\\**\\*.*"
+    filenames = []
+    pdf_dct = {}
+    for file in glob.glob(dir_path, recursive=True):
+        filenames.append(file)
+    start = time.time()
+    for file in filenames:
+        print(f"Processing {file}...")
+        fname = file.split('\\')[-1][:-4]
+        pdf_dct[fname] = {}
+        try:
+            cmts = pdf_comments_to_sim_dct(os.path.join(input_path, file))
+            hlts = pdf_highlight_to_dct(os.path.join(input_path, file))
+        except Exception as e:  # In case the file is corrupted
+            print(e)
+            print(f"Attempting to recover {file}...")
+            #pdfReader = file_recovery(file, myzip)  # attempting to recover file
+        for i in cmts.keys():
+            if i in hlts.keys():
+                pdf_dct[fname][i] = {}
+                pdf_dct[fname][i]["sentence"] = hlts[i]
+                # label cleaning
+                label = cmts[i].split("\n")[0]
+                label = label.split("\r")[0][3:]
+                pdf_dct[fname][i]["label"] = label
+            else:
+                print(fname, "did not have key:", i)
 
-#pc
-#dir_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\**\\*.*"
-# work laptop
-dir_path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs\\**\\*.*"
+    name = "pdf_extract.json"
+    file = os.path.join(output_path, name)
+    print(f"Writing to {file}")
+    with open(file, 'w+') as fp:
+        json.dump(pdf_dct, fp, indent=4)
 
-#output
-#pc
-#path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\"
-# work laptop
-path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\"
+    print(f"All done in {round(time.time()-start)}s")
 
-filenames = []
-pdf_dct = {}
-for file in glob.glob(dir_path, recursive=True):
-    filenames.append(file)
-start = time.time()
-for file in filenames:
-    print(f"Processing {file}...")
-    fname = file.split('\\')[-1][:-4]
-    pdf_dct[fname] = {}
-    try:
-        cmts = pdf_comments_to_sim_dct(os.path.join(INPUT_PATH, file))
-        hlts = pdf_highlight_to_dct(os.path.join(INPUT_PATH, file))
-    except Exception as e:  # In case the file is corrupted
-        print(e)
-        print(f"Attempting to recover {file}...")
-        #pdfReader = file_recovery(file, myzip)  # attempting to recover file
-    for i in cmts.keys():
-        if i in hlts.keys():
-            pdf_dct[fname][i] = {}
-            pdf_dct[fname][i]["sentence"] = hlts[i]
-            # label cleaning
-            label = cmts[i].split("\n")[0]
-            label = label.split("\r")[0][3:]
-            pdf_dct[fname][i]["label"] = label
-        else:
-            print(fname, "did not have key:", i)
-
-print("writing to json")
-
-name = "pdfextract"
-fname = name + ".json"
-file = path + fname
-with open(file, 'w+') as fp:
-    json.dump(pdf_dct, fp, indent=4)
-
-print(f"all done in {round(time.time()-start)}s")
-
-'''
 if __name__ == '__main__':
+    '''
+    input_path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs"
+    output_path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output"
+    main(input_path, output_path)
+
+    # cmd arg
+    # python ./src/pdf_annots.py -i "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs" -o "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output"
+    '''
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-c', '--creds_file', required=True,
-                        help="AWS credentials JSON file")
-    parser.add_argument('-l', '--language', required=True,
-                        help="Language for sentence preprocessing/splitting. Current options are: english, spanish")
-    parser.add_argument('-n', '--min_num_words', default=5,
-                        help="Minimum number of words that a sentence needs to have to be stored")
-    parser.add_argument('-p', '--print_every', default=100,
-                        help="Print status of preprocessing every X iterations")
+    parser.add_argument('-i', '--input_folder', required=True,
+                        help="Path to input folder of pdfs (NOT zipped)")
+    parser.add_argument('-o', '--output_folder', required=True,
+                        help="Path to where output should be stored.")
 
     args = parser.parse_args()
 
-    main(args.creds_file, args.language, int(args.min_num_words), int(args.print_every))
-'''
+    main(args.input_folder, args.output_folder)
+    
