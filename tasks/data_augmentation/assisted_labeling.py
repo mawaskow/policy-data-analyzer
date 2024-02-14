@@ -237,10 +237,11 @@ if __name__ == '__main__':
     input_path = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/"
     output_path = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
     main(language, sample, cuda, input_path, output_path, 0.2, 1000)
-    # cmd line arg
-    # python assisted_labeling.py -l 'spanish' -s -i "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/" -o "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
     '''
     
+    # cmd line arg
+    # python assisted_labeling.py -l 'spanish' -s -i "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/" -o "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-l', '--lang', required=True,

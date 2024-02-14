@@ -10,7 +10,7 @@ from collections import defaultdict
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
-
+import argparse
 from pikepdf import Pdf
 from PyPDF2 import PdfReader
 
@@ -30,7 +30,7 @@ def text_cleaning(text):
     return text
 
 
-def file_recovery(filename, zipfile):
+def file_recovery(filename, zipfile, output_path):
     """Attempts to recover a pdf file inside a zip that wasn't read correctly.
 
     Args:
@@ -41,7 +41,7 @@ def file_recovery(filename, zipfile):
         PdfReader: new PdfReader instance from where text will be read
     """
     with Pdf.open(BytesIO(zipfile.read(filename))) as pdf_file:  # attempting to recovery file
-        path_to_file = os.path.join(OUTPUT_PATH, os.path.basename(filename))
+        path_to_file = os.path.join(output_path, os.path.basename(filename))
         pdf_file.save(path_to_file)  # writes the file to disk
         pdfReader = PdfReader(path_to_file)  # attempts to read the file again
         os.remove(path_to_file)
@@ -54,12 +54,11 @@ def text_reader():
     # Useful link: https://stackoverflow.com/questions/55993860/getting-typeerror-ord-expected-string-of-length-1-but-int-found-error
     pass
 
-# set default values here in main()
-def main():
+def main(input_zip, output_path):
     logger = logging.getLogger(__name__)
     logger.info('Making pdf_files.json from base pdf files')
 
-    with ZipFile(INPUT_PATH) as myzip:
+    with ZipFile(input_zip) as myzip:
         # List files inside zip
         filenames = list(map(lambda x: x.filename, filter(lambda x: not x.is_dir(), myzip.infolist())))
         pdf_dict = defaultdict(dict)
@@ -83,41 +82,33 @@ def main():
             except Exception as e:  # In case the file is corrupted
                 logger.warning(e)
                 logger.info(f"Attempting to recover {file}...")
-                pdfReader = file_recovery(file, myzip)  # attempting to recover file
+                pdfReader = file_recovery(file, myzip, output_path)  # attempting to recover file
 
-    with open(os.path.join(OUTPUT_PATH, 'pdf_files.json'), 'w', encoding="utf-8") as outfile:
+    with open(os.path.join(output_path, 'pdf_files.json'), 'w', encoding="utf-8") as outfile:
         try:
             json.dump(pdf_dict, outfile, ensure_ascii=False, indent=4)
         except UnicodeEncodeError as e:
             logger.warning(e)
             logger.info(f"Skipping...")
 
-
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
-
-    # Necessary paths
-    TASK_DIR = Path(__file__).resolve().parents[1]
-    OUTPUT_PATH = os.path.join(TASK_DIR, "output")
-    INPUT_PATH = os.path.join(TASK_DIR, "input", "onedrive_docs.zip")
-
-    main()
-
-'''
-if __name__ == '__main__':
+    '''
+    input_zip = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/extract_text/input/onedrive_docs.zip"
+    output_path = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/extract_text/output"
+    main(input_zip, output_path)
+    '''
+    # cmd line example
+    # python ./src/make_pdfs.py -i "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/extract_text/input/onedrive_docs.zip" -o "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/extract_text/output"
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-c', '--creds_file', required=True,
-                        help="AWS credentials JSON file")
-    parser.add_argument('-l', '--language', required=True,
-                        help="Language for sentence preprocessing/splitting. Current options are: english, spanish")
-    parser.add_argument('-n', '--min_num_words', default=5,
-                        help="Minimum number of words that a sentence needs to have to be stored")
-    parser.add_argument('-p', '--print_every', default=100,
-                        help="Print status of preprocessing every X iterations")
+    parser.add_argument('-i', '--input_zip', required=True,
+                        help="Path to zip folder including input files.")
+    parser.add_argument('-o', '--output_path', required=True,
+                        help="Path to folder where output will be saved.")
 
     args = parser.parse_args()
 
-    main(args.creds_file, args.language, int(args.min_num_words), int(args.print_every))
-'''
+    main(args.input_zip, args.output_path)
+    
