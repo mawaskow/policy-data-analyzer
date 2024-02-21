@@ -40,12 +40,16 @@ def pdf_comments_to_sim_dct(file_path):
             for page_num in range(num_pages):
                 # Get the page object
                 page = pdf_reader.pages[page_num]
+                i=0
                 # Get the annotations for the page
                 if "/Annots" in page:
                     for annot in page["/Annots"]:
                         try:
                             comment = annot.get_object()["/Contents"]
-                            simple_dct[page_num] = comment
+                            if i==0:
+                                simple_dct[page_num] = {}
+                            simple_dct[page_num][i] = comment
+                            i+=1
                         except:
                             pass
             # Return the dct of comments
@@ -58,11 +62,13 @@ def pdf_comments_to_sim_dct(file_path):
 def pdf_highlight_to_dct(file_path):
     highlt_dct = {}
     doc = fitz.open(file_path)
-    # taking page for further processing
+    # traverse pdf by page
     for page_num in range(len(doc)):
         page = doc[page_num]
+        # list of highlights for each page
         highlights = []
         annot = page.first_annot
+        i=0
         while annot:
             if annot.type[0] == 8:
                 all_coordinates = annot.vertices
@@ -71,19 +77,22 @@ def pdf_highlight_to_dct(file_path):
                     highlights.append(highlight_coord)
                 else:
                     all_coordinates = [all_coordinates[x:x+4] for x in range(0, len(all_coordinates), 4)]
-                    for i in range(0,len(all_coordinates)):
-                        coord = fitz.Quad(all_coordinates[i]).rect
+                    for j in range(0,len(all_coordinates)):
+                        coord = fitz.Quad(all_coordinates[j]).rect
                         highlights.append(coord)
+                    all_words = page.get_text("words")
+            # List to store all the highlighted texts
+            highlight_text = []
+            for h in highlights:
+                sentence = [w[4] for w in all_words if fitz.Rect(w[0:4]).intersects(h)]
+                highlight_text.append(" ".join(sentence))
+            if highlight_text:
+                if i==0:
+                    highlt_dct[page_num]={}
+                highlt_dct[page_num][i] = text_cleaning(" ".join(highlight_text))
+            i+=1
             # this throws No attribute .parent: type(self)=<class 'fitz.Annot'> id(self)=#########: have set id(self.parent)=#######.
             annot = annot.next
-        all_words = page.get_text("words")
-        # List to store all the highlighted texts
-        highlight_text = []
-        for h in highlights:
-            sentence = [w[4] for w in all_words if fitz.Rect(w[0:4]).intersects(h)]
-            highlight_text.append(" ".join(sentence))
-        if highlight_text:
-            highlt_dct[page_num] = text_cleaning(" ".join(highlight_text))
     return highlt_dct
 
 def main(input_path, output_path):
@@ -93,28 +102,45 @@ def main(input_path, output_path):
     for file in glob.glob(dir_path, recursive=True):
         filenames.append(file)
     start = time.time()
+    #for each file
     for file in filenames:
-        print(f"Processing {file}...")
         fname = file.split('\\')[-1][:-4]
+        print(f"Processing {fname}...")
         pdf_dct[fname] = {}
+        # get comment annotation and highlighted text dictionaries
+        # first key is page number, then the number of each sentence/annotation
         try:
             cmts = pdf_comments_to_sim_dct(os.path.join(input_path, file))
             hlts = pdf_highlight_to_dct(os.path.join(input_path, file))
+            '''
+            cfile = os.path.join(output_path, fname+"_comm.json")
+            hfile = os.path.join(output_path, fname+"_hlt.json")
+            print(f"Writing to {cfile}")
+            with open(cfile, 'w+') as fp:
+                json.dump(cmts, fp, indent=4)
+            print(f"Writing to {hfile}")
+            with open(hfile, 'w+') as fp:
+                json.dump(hlts, fp, indent=4)
+            '''
         except Exception as e:  # In case the file is corrupted
             print(e)
             print(f"Attempting to recover {file}...")
             #pdfReader = file_recovery(file, myzip)  # attempting to recover file
-        for i in cmts.keys():
-            if i in hlts.keys():
-                pdf_dct[fname][i] = {}
-                pdf_dct[fname][i]["sentence"] = hlts[i]
-                # label cleaning
-                label = cmts[i].split("\n")[0]
-                label = label.split("\r")[0][3:]
-                pdf_dct[fname][i]["label"] = label
+        for p in cmts.keys():
+            if p in hlts.keys():
+                pdf_dct[fname][p]={}
+                for i in cmts[p].keys():
+                    if i in hlts[p].keys():
+                        pdf_dct[fname][p][i] = {}
+                        pdf_dct[fname][p][i]["sentence"]= hlts[p][i]
+                        # label cleaning
+                        label = cmts[p][i].split("\n")[0]
+                        label = label.split("\r")[0][3:]
+                        pdf_dct[fname][p][i]["label"] = label
+                    else:
+                        print(fname, "did not have same highlight count for page:", p)
             else:
-                print(fname, "did not have key:", i)
-
+                print(fname, "did not have highlight for page:", p)
     name = "pdf_extract.json"
     file = os.path.join(output_path, name)
     print(f"Writing to {file}")
@@ -124,9 +150,9 @@ def main(input_path, output_path):
     print(f"All done in {round(time.time()-start)}s")
 
 if __name__ == '__main__':
-    '''
-    input_path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs"
-    output_path = "C:\\Users\\ales\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output"
+    
+    input_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\input\\onedrive_docs"
+    output_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output"
     main(input_path, output_path)
 
     # cmd arg
@@ -142,4 +168,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args.input_folder, args.output_folder)
-    
+    '''
