@@ -61,11 +61,13 @@ def label_show(input_path):
     for fn in pdf_ann.keys():
         # then pagenumber
         for pn in pdf_ann[fn].keys():
-            j+=1
-            label = pdf_ann[fn][pn]['label']
-            if label not in ann_cls_lst:
-                print(label)
-                i=i+1
+            #then sentence in page
+            for sn in pdf_ann[fn][pn].keys():
+                j+=1
+                label = pdf_ann[fn][pn][sn]['label']
+                if label not in ann_cls_lst:
+                    print(label)
+                    i=i+1
     print(i, j)
 
 def main(input, output):
