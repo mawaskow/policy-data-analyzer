@@ -1,7 +1,3 @@
-import PyPDF2
-import os
-import glob
-import fitz
 import json
 import time
 import argparse
@@ -33,6 +29,13 @@ ann_cls_dct = {
 }
 
 def merge_label(input_string):
+    '''
+    input: label (str)
+    returns: cleaned label (list)
+    Goes through the raw label and converts it to
+    elements a list if it can be converted into
+    a known label
+    '''
     label_lst = []
     try:
         input_string = input_string.split(",")
@@ -53,9 +56,13 @@ def merge_label(input_string):
     except Exception as e:
         return [e]
 
-def label_show(input_path):
+def label_show_str(input_path):
     '''
-    Shows the labels that dont match when the labels are just strings
+    input: file path (str) to json
+    output: prints foreign label,
+            prints #foreign labels out of #labels
+    Shows the labels in a file that dont match the known labels
+    when the file labels are strings (not list elements)
     '''
     with open(input_path, "r", encoding="utf-8") as f:
         pdf_ann = json.load(f)
@@ -76,8 +83,11 @@ def label_show(input_path):
 
 def label_show_lst(input_path):
     '''
-    shows the labels that arent in the directory
-    when the labels are stored in lists
+    input: file path (str) to json
+    output: prints foreign label,
+            prints #foreign labels out of #labels
+    Shows the labels in a file that arent known labels
+    when the file labels are list elements
     '''
     with open(input_path, "r", encoding="utf-8") as f:
         pdf_ann = json.load(f)
@@ -97,8 +107,13 @@ def label_show_lst(input_path):
                         i=i+1
     print(i, j)
 
-def main(input, output):
-    #label_show(input)
+def clean_labels(input, output):
+    '''
+    inputs: path of file to be converted (str), path of output (str)
+    output: file with clean/uniform labels
+    Takes json file with raw annotations and converts them into lists of uniform labels (in new file)
+    '''
+    #label_show_str(input)
     '''
     # testing labels
     input_strings = ["Direct payment (PES)", "Forest, Agriculture (Crop)", "Direct payment (PES), Credit,",
@@ -119,9 +134,27 @@ def main(input, output):
     label_show_lst(output)
     print("done")
 
+def remove_empty(input, output):
+    with open(input,"r", encoding="utf-8") as f:
+        empties = json.load(f)
+    for pdf in list(empties):
+        for pg in list(empties[pdf]):
+            for snt in list(empties[pdf][pg]):
+                if len(empties[pdf][pg][snt]["label"]) == 0:
+                    empties[pdf][pg].pop(snt)
+            if len(empties[pdf][pg].keys()) == 0:
+                empties[pdf].pop(pg)
+        if len(empties[pdf].keys()) == 0:
+            empties.pop(pdf)
+    with open(output, "w", encoding="utf-8") as fo:
+        json.dump(empties, fo, ensure_ascii=False, indent=4)
+
+def main():
+    raw_labels = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\pdf_extract.json"
+    fixed_labels = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\text_preprocessing\\output\\fixed_labels.json"
+    clean_labels(raw_labels, fixed_labels)
+    output_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\text_preprocessing\\output\\fixed_empty.json"
+    remove_empty(fixed_labels, output_path)
 
 if __name__ == '__main__':
-    #input_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\text_preprocessing\\output\\fixed_labels.json"
-    input_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\extract_text\\output\\pdf_extract.json"
-    output_path = "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\text_preprocessing\\output\\fixed_labels.json"
-    main(input_path, output_path)
+    main()
