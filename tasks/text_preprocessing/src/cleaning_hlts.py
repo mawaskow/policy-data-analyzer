@@ -19,7 +19,6 @@ def sentcheck_dups(input_path, out_path):
             if len(list(pdf_ann[fn][pn]))>1:
                 # create a new dictionary for the page
                 new_pg = {}
-                #try:
                 # traverse sentence keys by iterable
                 for si in range(len(list(pdf_ann[fn][pn]))):
                     # if first sentence, add to new page (sentence and label)
@@ -35,17 +34,9 @@ def sentcheck_dups(input_path, out_path):
                             # if so, replace sentence and add label back
                             new_pg[ck] = {}
                             new_pg[ck]["sentence"] = pdf_ann[fn][pn][ck]["sentence"].replace(pdf_ann[fn][pn][pk]["sentence"], "")
-                            #cur = pdf_ann[fn][pn][ck]["sentence"]
-                            #prv = pdf_ann[fn][pn][pk]["sentence"]
-                            #new_pg[ck]["sentence"] = cur.replace(prv, "")
                             new_pg[ck]["label"] = pdf_ann[fn][pn][ck]["label"]
                         else:
                             new_pg[ck] = pdf_ann[fn][pn][ck]
-                #except Exception as e:
-                #    print(fn, pn, ":", e.args)
-                #print("\n\n\n", fn)
-                #print(pdf_ann[fn][pn])
-                #print(new_pg)
                 pdf_ann[fn][pn] = new_pg
     with open(out_path, "w", encoding="utf-8") as fo:
         json.dump(pdf_ann, fo, ensure_ascii=False, indent=4)
@@ -55,13 +46,9 @@ def main(input, output):
     '''
     inputs: path of file to be converted (str), path of output (str)
     output: file with cleaned sentences
-    Takes json file with raw annotations and converts them into lists of uniform labels (in new file)
+    Takes json file with raw highlight sentences and removes duplicate sentences
     '''
     sentcheck_dups(input, output)
-    '''
-    with open(output, "w", encoding="utf-8") as fo:
-        json.dump(mess, fo, ensure_ascii=False, indent=4)
-    '''
     #
     '''
     test_dct= {
