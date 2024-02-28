@@ -42,7 +42,7 @@ def sentence_similarity_search(model, queries, sentence_embeddings, sentences, s
     for query in tqdm.tqdm(queries):
         Ti = time.perf_counter()
         similarities = get_distance(model, sentence_embeddings, sentences, query, similarity_limit, cuda, prog_bar)
-        results[query] = similarities[0:results_limit]#results[transformer][query] = similarities[0:results_limit]
+        results[query] = similarities[0:results_limit] #results[transformer][query] = similarities[0:results_limit]
         Tf = time.perf_counter()
         print(f"Similarity search for query '{query}' has been done in {Tf - Ti:0.2f}s.")
     return results
@@ -109,8 +109,7 @@ def save_results_as_separate_csv(results_dictionary, queries_dictionary, path):
 #             print(filename)
     
 ############################################################################
-
-def main(language, sample=True, cuda=False, input_path=".", output_path=".", sim_thresh=0.2, res_lim=1000):
+def run_embedder(sample=True, cuda=False, input_path=".", output_path="."):
     script_info = "Running "
     if sample:
         script_info += "sample"
@@ -122,7 +121,6 @@ def main(language, sample=True, cuda=False, input_path=".", output_path=".", sim
         script_info += " on CPU."
     print(script_info)
     
-    prog_bar = False
     policy_dict = {}
     onlyfiles = [f for f in listdir(input_path) if isfile(join(input_path, f))]
 
@@ -134,18 +132,18 @@ def main(language, sample=True, cuda=False, input_path=".", output_path=".", sim
     sentences = labeled_sentences_from_dataset(policy_dict)
 
     if sample:
+        #random.seed(9)
         sample_sentence_ids = random.sample(list(sentences), 10)
         sample_sentences = {}
         for s_id in sample_sentence_ids:
             sample_sentences.update({s_id: sentences[s_id]})
+        sentences = sample_sentences
 
     Ti = time.perf_counter()
 
     transformer_name = 'xlm-r-bert-base-nli-stsb-mean-tokens'
 
-    today = datetime.date.today()
-    today = today.strftime('%Y-%m-%d')
-    filename = "Embeddings_" + today + "_ES.json"
+    filename = "Embeddings.json"
     file = output_path + filename
 
     if cuda:
@@ -155,10 +153,7 @@ def main(language, sample=True, cuda=False, input_path=".", output_path=".", sim
     
     print("Loaded model. Now creating sentence embeddings.")
 
-    if sample:
-        embs = create_sentence_embeddings(model, sample_sentences)
-    else:
-        embs = create_sentence_embeddings(model, sentences)
+    embs = create_sentence_embeddings(model, sentences)
 
     Tf = time.perf_counter()
 
@@ -167,6 +162,10 @@ def main(language, sample=True, cuda=False, input_path=".", output_path=".", sim
     with open(file, 'w+') as fp:
         json.dump(embs, fp, cls = NumpyArrayEncoder)
 
+    return embs, sentences, model
+
+def run_queries(embs, sentences, model, cuda=False, output_path=".", sim_thresh=0.2, res_lim=1000):
+    prog_bar = False
     print("Now running queries.")
 
     queries_dict = {
@@ -203,40 +202,38 @@ def main(language, sample=True, cuda=False, input_path=".", output_path=".", sim
 
     check_dictionary_values(queries_dict)
 
-    transformer_name ='xlm-r-bert-base-nli-stsb-mean-tokens'
-    today = datetime.date.today()
-    today = today.strftime('%Y-%m-%d')
-    name = "Pre_tagged_" + today
+    results_dict = sentence_similarity_search(model, queries, embs, sentences, sim_thresh, res_lim, cuda, prog_bar)
 
-    model = SentenceTransformer(transformer_name)
-    if sample:
-        results_dict = sentence_similarity_search(model, queries, embs, sample_sentences, sim_thresh, res_lim, cuda, prog_bar)
-    else: 
-        results_dict = sentence_similarity_search(model, queries, embs, sentences, sim_thresh, res_lim, cuda, prog_bar)
-
-    fname = name + ".json"
-    file = output_path + fname
+    file = output_path + "Pre_tagged.json"
     with open(file, 'w+') as fp:
         json.dump(results_dict, fp, indent=4)
 
-    file = output_path + name +".json"
+def add_rank(file, query_dct, output_path):
     with open(file, "r") as f:
         results_ = json.load(f)
-
     results = add_rank(results_)
-
     # Save the results as separete csv files
+    save_results_as_separate_csv(results, query_dct, output_path)
 
-    save_results_as_separate_csv(results, queries_dict, output_path)
+def main():
+    st = time.time()
+    sample = True
+    cuda = True
+    input_path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/"
+    output_path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+    if sample:
+        sim_thresh = 0.2
+    else:
+        sim_thresh = 0.5
+    ##############
+    embs, sentences, model = run_embedder(sample, cuda, input_path, output_path)
+    run_queries(embs, sentences, model, cuda, output_path, sim_thresh=0.4, res_lim=1000)
+    ##############
+    et = time.time()-st
+    print("Time elapsed total:", et//60, "min and", round(et%60), "sec")
 
 if __name__ == '__main__':
-    '''
-    language = 'spanish'
-    sample = True
-    cuda = False
-    input_path = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/"
-    output_path = "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
-    main(language, sample, cuda, input_path, output_path, 0.2, 1000)
+    main()
     '''
     
     # cmd line arg
@@ -262,4 +259,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args.lang, args.sample, args.cuda, args.input_path, args.output_path, float(args.thresh), int(args.lim))
-    
+    '''
