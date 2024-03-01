@@ -24,6 +24,34 @@ class NumpyArrayEncoder(JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
+    
+QUERIES_DCT = {
+    "Otorgamiento de estímulos crediticios por parte de el estado" : "Credit-México",
+"Estos créditos podrían beneficiar a sistemas productivos asociados a la pequeña y mediana producción" : "Credit-Perú",
+"Se asocia con créditos de enlace del Banco del Estado" : "Credit-Chile", 
+"Acceso al programa de garantía crediticia para la actividad económica" : "Credit-Guatemala",
+"El banco establecerá líneas de crédito para que el sistema financiero apoye la pequeña, mediana y microempresa" : "Credit-El Salvador",
+"Dentro de los incentivos económicos se podrá crear un bono para retribuir a los propietarios por los bienes y servicios generados." : "Direct_payment-México",
+"Acceso a los fondos forestales para el pago de actividad" : "Direct_payment-Perú",
+"Se bonificará el 90% de los costos de repoblación para las primeras 15 hectáreas y de un 75% respecto las restantes" : "Direct_payment-Chile",
+"El estado dará un incentivo que se pagará una sola vez a los propietarios forestales" : "Direct_payment-Guatemala",
+"Incentivos en dinero para cubrir los costos directos e indirectos del establecimiento y manejo de areas de producción" : "Direct_payment-El Salvador",
+"Toda persona física o moral que cause daños estará obligada a repararlo o compensarlo" : "Fine-México",
+"Disminuir los riesgos para el inversionista implementando mecanismos de aseguramiento" : "Guarantee-México",
+"Podrá garantizarse el cumplimiento de la actividad mediante fianza otorgada a favor del estado por cualquiera de las afianzadoras legalmente autorizadas." : "Guarantee-Guatemala",
+"El sujeto de derecho podrá recibir insumos para la instalación y operación de infraestructuras para la actividad económica." : "Supplies-México",
+"Se facilitará el soporte técnico a  través de la utilización de guías, manuales, protocolos, paquetes tecnológicos, procedimientos, entre otros." : "Supplies-Perú",
+"Se concederán incentivos en especie para fomentar la actividad en forma de insumos" : "Supplies-El Salvador",
+"Se otorgarán incentivos fiscales para la actividad primaria y también la actividad de transformación" : "Tax_deduction-México",
+"De acuerdo con los lineamientos aprobados se concederá un 25% de descuento en el pago del derecho de aprovechamiento" : "Tax_deduction-Perú",
+"Las bonificaciones percibidas o devengadas se considerarán como ingresos diferidos en el pasivo circulante y no se incluirán para el cálculo de la tasa adicional ni constituirán renta para ningún efecto legal hasta el momento en que se efectúe la explotación o venta" : "Tax_deduction-Chile",
+"Los contratistas que suscriban contratos de exploración y/o explotación, quedan exentos de cualquier impuesto sobre los dividendos, participaciones y utilidades" : "Tax_deduction-Guatemala",
+"Exención de los derechos e impuestos, incluyendo el Impuesto a la Transferencia de Bienes Muebles y a la Prestación de Servicios, en la importación de sus bienes, equipos y accesorios, maquinaria, vehículos, aeronaves o embarcaciones" : "Tax_deduction-El Salvador",
+"Se facilitará formación Permanente Además del acompañamiento técnico, los sujetos de derecho participarán en un proceso permanente de formación a lo largo de todo el año, que les permita enriquecer sus habilidades y capacidades " : "Technical_assistance-México",
+"Contribuir en la promoción para la gestión, a través de la capacitación, asesoramiento, asistencia técnica y educación de los usuarios" : "Technical_assistance-Perú",
+"Asesoría prestada al usuario por un operador acreditado, conducente a elaborar, acompañar y apoyar la adecuada ejecución técnica en terreno de aquellas prácticas comprometidas en el Plan de Manejo" : "Technical_assistance-Chile",
+"Para la ejecución de programas de capacitación, adiestramiento y otorgamiento de becas para la preparación de personal , así como para el desarrollo de tecnología en actividades directamente relacionadas con las operaciones objeto del contrato" : "Technical_assistance-Guatemala",
+"Apoyo técnico y en formulación de proyectos y conexión con mercados" : "Technical_assistance-El Salvador"}
 
 def labeled_sentences_from_dataset(dataset):
     sentence_tags_dict = {}
@@ -168,39 +196,11 @@ def run_queries(embs, sentences, model, cuda=False, output_path=".", sim_thresh=
     prog_bar = False
     print("Now running queries.")
 
-    queries_dict = {
-        "Otorgamiento de estímulos crediticios por parte de el estado" : "Credit-México",
-    "Estos créditos podrían beneficiar a sistemas productivos asociados a la pequeña y mediana producción" : "Credit-Perú",
-    "Se asocia con créditos de enlace del Banco del Estado" : "Credit-Chile", 
-    "Acceso al programa de garantía crediticia para la actividad económica" : "Credit-Guatemala",
-    "El banco establecerá líneas de crédito para que el sistema financiero apoye la pequeña, mediana y microempresa" : "Credit-El Salvador",
-    "Dentro de los incentivos económicos se podrá crear un bono para retribuir a los propietarios por los bienes y servicios generados." : "Direct_payment-México",
-    "Acceso a los fondos forestales para el pago de actividad" : "Direct_payment-Perú",
-    "Se bonificará el 90% de los costos de repoblación para las primeras 15 hectáreas y de un 75% respecto las restantes" : "Direct_payment-Chile",
-    "El estado dará un incentivo que se pagará una sola vez a los propietarios forestales" : "Direct_payment-Guatemala",
-    "Incentivos en dinero para cubrir los costos directos e indirectos del establecimiento y manejo de areas de producción" : "Direct_payment-El Salvador",
-    "Toda persona física o moral que cause daños estará obligada a repararlo o compensarlo" : "Fine-México",
-    "Disminuir los riesgos para el inversionista implementando mecanismos de aseguramiento" : "Guarantee-México",
-    "Podrá garantizarse el cumplimiento de la actividad mediante fianza otorgada a favor del estado por cualquiera de las afianzadoras legalmente autorizadas." : "Guarantee-Guatemala",
-    "El sujeto de derecho podrá recibir insumos para la instalación y operación de infraestructuras para la actividad económica." : "Supplies-México",
-    "Se facilitará el soporte técnico a  través de la utilización de guías, manuales, protocolos, paquetes tecnológicos, procedimientos, entre otros." : "Supplies-Perú",
-    "Se concederán incentivos en especie para fomentar la actividad en forma de insumos" : "Supplies-El Salvador",
-    "Se otorgarán incentivos fiscales para la actividad primaria y también la actividad de transformación" : "Tax_deduction-México",
-    "De acuerdo con los lineamientos aprobados se concederá un 25% de descuento en el pago del derecho de aprovechamiento" : "Tax_deduction-Perú",
-    "Las bonificaciones percibidas o devengadas se considerarán como ingresos diferidos en el pasivo circulante y no se incluirán para el cálculo de la tasa adicional ni constituirán renta para ningún efecto legal hasta el momento en que se efectúe la explotación o venta" : "Tax_deduction-Chile",
-    "Los contratistas que suscriban contratos de exploración y/o explotación, quedan exentos de cualquier impuesto sobre los dividendos, participaciones y utilidades" : "Tax_deduction-Guatemala",
-    "Exención de los derechos e impuestos, incluyendo el Impuesto a la Transferencia de Bienes Muebles y a la Prestación de Servicios, en la importación de sus bienes, equipos y accesorios, maquinaria, vehículos, aeronaves o embarcaciones" : "Tax_deduction-El Salvador",
-    "Se facilitará formación Permanente Además del acompañamiento técnico, los sujetos de derecho participarán en un proceso permanente de formación a lo largo de todo el año, que les permita enriquecer sus habilidades y capacidades " : "Technical_assistance-México",
-    "Contribuir en la promoción para la gestión, a través de la capacitación, asesoramiento, asistencia técnica y educación de los usuarios" : "Technical_assistance-Perú",
-    "Asesoría prestada al usuario por un operador acreditado, conducente a elaborar, acompañar y apoyar la adecuada ejecución técnica en terreno de aquellas prácticas comprometidas en el Plan de Manejo" : "Technical_assistance-Chile",
-    "Para la ejecución de programas de capacitación, adiestramiento y otorgamiento de becas para la preparación de personal , así como para el desarrollo de tecnología en actividades directamente relacionadas con las operaciones objeto del contrato" : "Technical_assistance-Guatemala",
-    "Apoyo técnico y en formulación de proyectos y conexión con mercados" : "Technical_assistance-El Salvador"}
-
     queries = []
-    for query in queries_dict:
+    for query in QUERIES_DCT:
         queries.append(query)
 
-    check_dictionary_values(queries_dict)
+    #check_dictionary_values(queries_dict)
 
     results_dict = sentence_similarity_search(model, queries, embs, sentences, sim_thresh, res_lim, cuda, prog_bar)
 
@@ -215,7 +215,27 @@ def add_rank(file, query_dct, output_path):
     # Save the results as separete csv files
     save_results_as_separate_csv(results, query_dct, output_path)
 
+def convert_pretagged(input_path, output_path):
+    qdct = QUERIES_DCT.copy()
+    for query in list(qdct):
+        raw_label = qdct[query]
+        label = raw_label.split("-")[0]
+        label = label.replace("_", " ")
+        qdct[query] = label
+    with open(input_path, "r") as f:
+        pre_lab = json.load(f)
+    new_dct = {}
+    for qry in tqdm.tqdm(list(pre_lab)):
+        label = qdct[qry]
+        for sent_unit in pre_lab[qry]:
+            # the format has the sentence as the last element in the sublist
+            sentence = sent_unit[-1]
+            new_dct[sentence] = label
+    with open(output_path, 'w+') as fp:
+        json.dump(new_dct, fp, indent=2)
+
 def main():
+    '''
     st = time.time()
     sample = True
     cuda = True
@@ -231,6 +251,10 @@ def main():
     ##############
     et = time.time()-st
     print("Time elapsed total:", et//60, "min and", round(et%60), "sec")
+    '''
+    input_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_0.75.json"
+    output_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_0.75_fixed.json"
+    convert_pretagged(input_path, output_path)
 
 if __name__ == '__main__':
     main()
