@@ -1,0 +1,8 @@
+              precision    recall  f1-score   support
+
+   incentive       0.89      0.94      0.91      4029
+non-incentve       0.93      0.85      0.89      3330
+
+    accuracy                           0.90      7359
+   macro avg       0.91      0.90      0.90      7359
+weighted avg       0.90      0.90      0.90      7359

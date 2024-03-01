@@ -1,0 +1,48 @@
+RandomForestClassifier
+                      precision    recall  f1-score   support
+
+              Credit       0.00      0.00      0.00        53
+      Direct payment       0.77      0.74      0.75       324
+                Fine       0.00      0.00      0.00        93
+           Guarantee       0.00      0.00      0.00       107
+            Supplies       0.00      0.00      0.00        53
+       Tax deduction       0.57      0.68      0.62       420
+Technical assistance       0.60      0.91      0.73       470
+
+            accuracy                           0.63      1520
+           macro avg       0.28      0.33      0.30      1520
+        weighted avg       0.51      0.63      0.56      1520
+
+Evaluating: GradientBoostingClassifier
+Training...
+Predicting...
+                      precision    recall  f1-score   support
+
+              Credit       0.75      0.28      0.41        53
+      Direct payment       0.80      0.85      0.83       324
+                Fine       0.74      0.69      0.71        93
+           Guarantee       0.66      0.50      0.57       107
+            Supplies       0.47      0.15      0.23        53
+       Tax deduction       0.73      0.80      0.77       420
+Technical assistance       0.84      0.90      0.87       470
+
+            accuracy                           0.78      1520
+           macro avg       0.71      0.60      0.63      1520
+        weighted avg       0.77      0.78      0.76      1520
+
+Evaluating: GradientBoostingClassifier
+Training...
+Predicting...
+                      precision    recall  f1-score   support
+
+              Credit       0.60      0.23      0.33        53
+      Direct payment       0.79      0.79      0.79       324
+                Fine       0.73      0.60      0.66        93
+           Guarantee       0.59      0.44      0.50       107
+            Supplies       0.29      0.15      0.20        53
+       Tax deduction       0.70      0.80      0.74       420
+Technical assistance       0.81      0.88      0.84       470
+
+            accuracy                           0.74      1520
+           macro avg       0.64      0.56      0.58      1520
+        weighted avg       0.73      0.74      0.73      1520

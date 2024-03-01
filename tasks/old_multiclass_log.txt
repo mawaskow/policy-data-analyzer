@@ -1,0 +1,12 @@
+                      precision    recall  f1-score   support
+
+              Credit       0.88      0.88      0.88        26
+      Direct payment       0.84      0.86      0.85        49
+                Fine       0.90      0.95      0.92        19
+            Supplies       0.00      0.00      0.00         8
+       Tax deduction       0.89      0.80      0.84        10
+Technical assistance       0.69      0.91      0.78        22
+
+            accuracy                           0.83       134
+           macro avg       0.70      0.73      0.71       134
+        weighted avg       0.79      0.83      0.80       134

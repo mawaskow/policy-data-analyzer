@@ -4,6 +4,7 @@ from os import listdir
 from os.path import isfile, join
 import random
 import time
+import datetime
 import csv
 import sys
 import argparse
@@ -64,12 +65,12 @@ def create_sentence_embeddings(model, sentences_dict):
         embeddings[sentence_id] = model.encode(sentence_map['text'].lower(), show_progress_bar=False)
     return embeddings
     
-def sentence_similarity_search(model, queries, sentence_embeddings, sentences, similarity_limit, results_limit, cuda, prog_bar):
+def sentence_dissimilarity_search(model, queries, sentence_embeddings, sentences, similarity_limit, results_limit, cuda, prog_bar):
     results = {}
     for query in tqdm.tqdm(queries):
         Ti = time.perf_counter()
-        similarities = get_distance(model, sentence_embeddings, sentences, query, similarity_limit, cuda, prog_bar)
-        results[query] = similarities[0:results_limit] #results[transformer][query] = similarities[0:results_limit]
+        dissimilarities = get_distance(model, sentence_embeddings, sentences, query, similarity_limit, cuda, prog_bar)
+        results[query] = dissimilarities[0:results_limit] #results[transformer][query] = similarities[0:results_limit]
         Tf = time.perf_counter()
         print(f"Similarity search for query '{query}' has been done in {Tf - Ti:0.2f}s.")
     return results
@@ -85,7 +86,7 @@ def check_dictionary_values(dictionary):
     print(check_incentive)
     print(check_country)
 
-def get_distance(model, sentence_emb, sentences_dict, query, similarity_treshold, cuda, prog_bar):
+def get_distance(model, sentence_emb, sentences_dict, query, dissimilarity_treshold, cuda, prog_bar):
     if cuda:
         query_embedding = model.encode(query.lower(), show_progress_bar=prog_bar, device='cuda')
     else:
@@ -95,7 +96,7 @@ def get_distance(model, sentence_emb, sentences_dict, query, similarity_treshold
         try:
             sentence_embedding = sentence_emb[sentence]
             score = 1 - distance.cosine(sentence_embedding, query_embedding)
-            if score > similarity_treshold:
+            if score < dissimilarity_treshold:
                 highlights.append([sentence, score, sentences_dict[sentence]['text']])
         except KeyError as err:
             print(sentence)
@@ -191,19 +192,18 @@ def run_embedder(sample=True, cuda=False, input_path=".", output_path="."):
 
     return embs, sentences, model
 
-def run_queries(embs, sentences, model, cuda=False, output_path=".", sim_thresh=0.2, res_lim=1000):
+def run_binary(embs, sentences, model, cuda=False, output_path=".",sim_thresh=0.2, res_lim=1000):
     prog_bar = False
     print("Now running queries.")
-
     queries = []
     for query in QUERIES_DCT:
         queries.append(query)
 
     #check_dictionary_values(queries_dict)
 
-    results_dict = sentence_similarity_search(model, queries, embs, sentences, sim_thresh, res_lim, cuda, prog_bar)
+    results_dict = sentence_dissimilarity_search(model, queries, embs, sentences, sim_thresh, res_lim, cuda, prog_bar)
 
-    file = output_path + "Pre_tagged.json"
+    file = output_path + "Pre_tagged_dissim.json"
     with open(file, 'w+') as fp:
         json.dump(results_dict, fp, indent=4)
 
@@ -215,53 +215,50 @@ def add_rank(file, query_dct, output_path):
     save_results_as_separate_csv(results, query_dct, output_path)
 
 def convert_pretagged(input_path, output_path):
-    qdct = QUERIES_DCT.copy()
-    for query in list(qdct):
-        raw_label = qdct[query]
-        label = raw_label.split("-")[0]
-        label = label.replace("_", " ")
-        qdct[query] = label
     with open(input_path, "r") as f:
         pre_lab = json.load(f)
-    new_dct = {}
+    sentences = []
     for qry in tqdm.tqdm(list(pre_lab)):
-        label = qdct[qry]
         for sent_unit in pre_lab[qry]:
             # the format has the sentence as the last element in the sublist
             sentence = sent_unit[-1]
-            new_dct[sentence] = label
+            sentences.append(sentence)
     with open(output_path, 'w+') as fp:
-        json.dump(new_dct, fp, indent=2)
+        json.dump(sentences, fp, indent=2)
 
 def main():
-    
+    '''
     st = time.time()
-    sample = True
+    sample = False
     cuda = True
     input_path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/"
-    output_path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+    output_path = "C:/Users/Allie/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/EXP1/"
     if sample:
         sim_thresh = 0.2
     else:
         sim_thresh = 0.5
     ##############
     embs, sentences, model = run_embedder(sample, cuda, input_path, output_path)
-    run_queries(embs, sentences, model, cuda, output_path, sim_thresh=0.4, res_lim=1000)
+    #run_queries(embs, sentences, model, cuda, output_path, sim_thresh=0.4, res_lim=1000)
+    run_binary(embs, sentences, model, cuda, output_path, sim_thresh=0.05, res_lim=1000)
     ##############
     et = time.time()-st
     print("Time elapsed total:", et//60, "min and", round(et%60), "sec")
     '''
-    input_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_0.75.json"
-    output_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_0.75_fixed.json"
+    input_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_dissim_0.05.json"
+    output_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_dis_sentences.json"
     convert_pretagged(input_path, output_path)
-    '''
+    input_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_0.5.json"
+    output_path= "C:\\Users\\allie\\Documents\\GitHub\\policy-data-analyzer\\tasks\\data_augmentation\\output\\EXP1\\Pre_tagged_0.5_sentences.json"
+    convert_pretagged(input_path, output_path)
+    
 
 if __name__ == '__main__':
     main()
     '''
     
     # cmd line arg
-    # python assisted_labeling.py -l 'spanish' -s -i "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/" -o "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
+    # python binary_labeling.py -l 'spanish' -s -i "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/text_preprocessing/output/new/" -o "C:/Users/Ales/Documents/GitHub/policy-data-analyzer/tasks/data_augmentation/output/sample/"
 
     parser = argparse.ArgumentParser()
 
